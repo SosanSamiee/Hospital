@@ -7,7 +7,8 @@ Hospital::Hospital()
     get_numberbed();
     get_numberpatient();
     get_information();
-    FCFS();
+   FCFS();
+   // SJF();
 }
 
 //getting the capacity of hospital
@@ -115,13 +116,14 @@ void Hospital::FCFS()
         {
             number_deaths++;
         }
-        total_waitingtime += hospitalization[j][0];
+        total_waitingtime += hospitalization[j][0] - information_table[j][1];
     }
 
     std::cout << "avarag = " << (float)total_waitingtime / (float)number_patient << std::endl;  
     std::cout << "the number of deaths = " << number_deaths << std::endl; 
     std::cout << "the number of recoveries = " << number_patient - number_deaths << std::endl;   
 }
+
 
 
 

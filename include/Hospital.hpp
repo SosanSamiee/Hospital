@@ -11,8 +11,8 @@ class Hospital
         void get_numberbed();
         void get_numberpatient();
         void get_information();
-        //scenario:first come first served
-        void FCFS();
+        void FCFS();//scenario:first come first served
+        //void SJF();
     
     private:
 
