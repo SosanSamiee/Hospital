@@ -12,7 +12,7 @@ class Hospital
         void get_numberpatient();
         void get_information();
         void FCFS();//scenario:first come first served
-        //void SJF();
+        void SJF();
     
     private:
 

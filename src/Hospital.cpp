@@ -7,8 +7,8 @@ Hospital::Hospital()
     get_numberbed();
     get_numberpatient();
     get_information();
-   FCFS();
-   // SJF();
+    //FCFS();
+    SJF();
 }
 
 //getting the capacity of hospital
@@ -64,7 +64,6 @@ void Hospital::FCFS()
     std::array<std::array<int, 2>,  1000 > hospitalization{};
     //place of hospitalization of the patient
     std::array<int, 1000 > bed{};
-
     //Initialization
     for(int i = 0; i < number_bed; i++)
     {
@@ -123,6 +122,84 @@ void Hospital::FCFS()
     std::cout << "the number of deaths = " << number_deaths << std::endl; 
     std::cout << "the number of recoveries = " << number_patient - number_deaths << std::endl;   
 }
+
+//scenario: Shortesr Job First 
+void Hospital::SJF()
+{
+    //array to stor hospitalization information
+    std::array<std::array<int, 2>,  1000 > hospitalization{};
+    //place of hospitalization of the patient
+    std::array<int, 1000 > bed{};
+
+    //Initialization
+    for(int i = 0; i < number_bed; i++)
+    {
+        bed[i] = 0;
+    }
+    //copy array
+    std::array<std::array<int, 4>, 1000> information_in_SJF{};
+    for(int i = 0; i < number_patient; i++)
+    {
+        for(int j = 1; j < 4; j++)
+        {
+            information_in_SJF[i][j] = information_table[i][j];
+        }
+    }
+
+    int count = 0;
+    for(int i = 0; count < number_patient ; i++)
+    {
+        //hospitalization time
+        for(int k = 0; k < number_bed; k++)
+        {
+            if(bed[k] == 0)
+            {
+                int min = 0;
+                int c = 0;
+                int check_pation = 0;
+                for(int j = 0; information_in_SJF[j][1] <= i && j < number_patient  ; j++)
+                {
+                    if(min == 0 && information_in_SJF[j][2] != 0)
+                    {
+                        min = information_in_SJF[j][2];
+                        c = j;
+                        check_pation = information_in_SJF[j][0];
+                    }
+                    if(information_in_SJF[j][2] != 0 && information_in_SJF[j][2] < min)
+                    {
+                        min = information_in_SJF[j][2];
+                        c = j;
+                        check_pation = information_in_SJF[j][0];
+                    }
+                }
+
+                bed[k] = information_in_SJF[c][2];
+                information_in_SJF[c][2] = 0;
+                hospitalization[c][0] = i;
+                hospitalization[c][1] = k + 1;
+                count++;
+                
+            }
+
+        }
+        //passing of time
+        for(int z = 0; z < number_bed; z++)
+        {
+            if(bed[z] != 0)
+            {
+                bed[z] -= 1;
+            }
+        }   
+    }  
+
+    for(int i = 0; i < number_patient; i++)
+    {
+        std::cout << "pationt " << i + 1 << " >>>>   hospitalization time " << 
+        hospitalization[i][0] <<"    hospitalization bed  " << hospitalization[i][1] << std::endl; 
+    }
+
+}
+
 
 
 
