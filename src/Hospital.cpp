@@ -7,8 +7,9 @@ Hospital::Hospital()
     get_numberbed();
     get_numberpatient();
     get_information();
-    FCFS();
+    //FCFS();
     //SJF();
+    //Priority_Scheduling();
 }
 
 //getting the capacity of hospital
@@ -90,9 +91,9 @@ void Hospital::FCFS()
     int count_time = 0; 
     // competion of treatment
     bool End = false ;
-    for(int i = 0; ! End /*count < number_patient*/ ; i++)
+    for(int i = 0; ! End ; i++)
     {
-        std::cout << "i -> " << i << std::endl ;
+        //std::cout << "i -> " << i << std::endl ;
 
         // caculate the number of pation how have come
         number_pation_come = 0;
@@ -104,7 +105,13 @@ void Hospital::FCFS()
         // caculate the number of pation how have bean leave
         for ( int t = 0; count > t  ; t++ )
         {
-            if (! leave[t] && (count_time - information_table[t][1] >= hospitalization[t][0] - information_table[t][1] + information_table[t][2]) )
+            if(! leave[t] && information_table[t][2] == 0 && information_table[t][3] != 0 )
+            {
+                leave[t] = true;         
+                hospitalization[t][0] = 0 ;
+                hospitalization[t][1] = -3;
+            }
+            if (! leave[t] && information_table[t][3] != 0  && hospitalization[t][0] >= information_table[t][1] && (count_time - information_table[t][1] >= hospitalization[t][0] - information_table[t][1] + information_table[t][2]) )
             {
                 leave[t] = true;
             }
@@ -113,11 +120,19 @@ void Hospital::FCFS()
         // check death
         for(int j = 0; j < number_pation_come ; j++)
         {
+            if( !leave[j] && alive[j] && information_table[j][3] == 0 )
+            {
+                number_deaths++;
+                alive[j] = false;
+                leave[j] = true;
+                hospitalization[j][0] = 0 ;
+                hospitalization[j][1] = -2;
+            }
             if ( !leave[j] && alive[j] && j >= count )
             {
                 if ( (count_time - information_table[j][1]) >= information_table[j][3] )
                 {
-                    std::cout <<" *\n" ;
+                    //std::cout <<" *\n" ;
                     number_deaths++;
                     alive[j] = false;
                     leave[j] = true;
@@ -127,7 +142,8 @@ void Hospital::FCFS()
             }
             else if( !leave[j] && alive[j] && ( count_time - information_table[j][1] ) >= information_table[j][3] ) 
             {
-                std::cout << "**\n" ;
+                //std::cout << "**\n" ;
+                
                 number_deaths++;
                 bed[hospitalization[j][1]-1] = 0;
                 alive[j] = false;
@@ -144,22 +160,23 @@ void Hospital::FCFS()
             else
             {
                 End = false;
+                break;
             }
         }
 
         //hospitalization time
         for(int k = 0; count < number_patient && k < number_bed && information_table[count][1] <= i; k++)
         {
-            if( alive[count] && bed[k] == 0 )
+            if( !leave[count] && alive[count] && bed[k] == 0 )
             {
                 bed[k] = information_table[count][2];
                 hospitalization[count][0] = i;
                 hospitalization[count][1] = k + 1;
                 count++;
             }            
-            if ( ! alive[count] )
+            if (! alive[count] )
             {
-                std::cout << "k -> " << k << std::endl ;
+                //std::cout << "k -> " << k << std::endl ;
                 count++;
                 k--;
             }
@@ -182,14 +199,25 @@ void Hospital::FCFS()
     {
         if (alive[i]) 
         {
-            std::cout << "pationt " << i + 1 << " >>>>   hospitalization time " << 
-            hospitalization[i][0] <<"    hospitalization bed  " << hospitalization[i][1] << std::endl; 
+            if (hospitalization[i][1] == -3)
+            {
+                std::cout << "pationt " << i + 1 <<" >>>>   Outpation " << std::endl ;
+            }
+            else 
+            {
+                std::cout << "pationt " << i + 1 << " >>>>   hospitalization time " << 
+                hospitalization[i][0] <<"    hospitalization bed  " << hospitalization[i][1] << std::endl; 
+            }
         }
         else{
             std::cout << "pationt " << i + 1 ;
             if ( hospitalization[i][1] == -1 )
             {
                 std::cout << " >>>>   death " << " -  \" Unfortunately, an ampty bed was not found for the patient and he died. \"  " << std::endl;
+            }
+            else if (hospitalization[i][1] == -2)
+            {
+                std::cout << " >>>>   death " << " -  \" The coming of a dead person. \"  " << std::endl ;
             }
             else
             {
@@ -216,17 +244,27 @@ void Hospital::FCFS()
 }
 
 //scenario: Shortesr Job First 
-void Hospital::SJF()
+void Hospital::SJF()                                                                                                                                                                                                
 {
     //array to stor hospitalization information
     std::array<std::array<int, 2>,  1000 > hospitalization{};
     //place of hospitalization of the patient
     std::array<int, 1000 > bed{};
 
+    // check alive
+    std::array<bool, 1000 > alive{};
+    // check leave
+    std::array<bool, 1000 > leave{};
+
     //Initialization
     for(int i = 0; i < number_bed; i++)
     {
         bed[i] = 0;
+    }
+    for (int i = 0; i < 1000; i++)
+    {
+        alive[i] = true ;
+        leave[i] = false;
     }
     //copy array
     std::array<std::array<int, 4>, 1000> information_in_SJF{};
@@ -238,43 +276,121 @@ void Hospital::SJF()
         }
     }
 
+    // hospitalized pation counter 
     int count = 0;
-    for(int i = 0; count < number_patient ; i++)
+    //number of dead
+    int number_deaths = 0;
+    //number of pation how have come
+    int number_pation_come = 0;
+    // elapsed time calculation
+    int count_time = 0; 
+    // competion of treatment
+    bool End = false ;
+
+    for(int i = 0; ! End ; i++)
     {
-        //hospitalization time
-        for(int k = 0; k < number_bed; k++)
+        // caculate the number of pation how have come
+        number_pation_come = 0;
+        for ( int t = 0; number_patient > t && information_table[t][1] <= i  ; t++ )
         {
-            if(bed[k] == 0)
+            number_pation_come++;
+        }
+
+        // caculate the number of pation how have bean leave
+        for ( int t = 0;  number_pation_come > t  ; t++ )
+        {
+            if( ! leave[t] && information_table[t][2] == 0 && information_table[t][3] != 0 )
+            {
+                count++;
+                hospitalization[t][0] = 0 ;
+                hospitalization[t][1] = -3;
+                leave[t] = true;            
+            }
+            if (! leave[t] && information_table[t][3] != 0  && hospitalization[t][0] >= information_table[t][1] && 
+            (count_time - information_table[t][1] >= hospitalization[t][0] - information_table[t][1] + information_table[t][2]) )
+            {
+                leave[t] = true;
+            }
+        }
+
+        // check death
+        for(int j = 0; j < number_pation_come ; j++)
+        {
+            if( !leave[j] && alive[j] && information_table[j][3] == 0 )
+            {
+                count++;
+                number_deaths++;
+                alive[j] = false;
+                leave[j] = true;
+                hospitalization[j][0] = 0 ;
+                hospitalization[j][1] = -2;
+            }
+            if ( !leave[j] && alive[j] && information_in_SJF[j][2] != 0 )
+            {
+                if ( (count_time - information_table[j][1]) >= information_table[j][3] )
+                {
+                    count++;
+                    number_deaths++;
+                    alive[j] = false;
+                    leave[j] = true;
+                    hospitalization[j][0] = count_time ;
+                    hospitalization[j][1] = -1;
+                }
+            }
+            else if( !leave[j] && alive[j] && ( count_time - information_table[j][1] ) >= information_table[j][3] ) 
+            {
+                number_deaths++;
+                bed[hospitalization[j][1]-1] = 0;
+                alive[j] = false;
+                leave[j] = true;
+            }
+        }
+
+        for ( int t = 0; number_patient > t  ; t++ )
+        {
+            if ( leave[t] )
+            {
+                End = true;
+            }
+            else
+            {
+                End = false;
+                break;
+            }
+        }
+        //hospitalization time
+        for(int k = 0; count < number_patient && k < number_bed && information_table[k][1] <= i; k++)
+        {
+
+            if( bed[k] == 0 ) 
             {
                 int min = 0;
                 int c = 0;
                 int check_pation = 0;
                 for(int j = 0; information_in_SJF[j][1] <= i && j < number_patient  ; j++)
                 {
-                    if(min == 0 && information_in_SJF[j][2] != 0)
+                    if( ( !leave[j] && alive[j] ) && min == 0 && information_in_SJF[j][2] != 0)
                     {
                         min = information_in_SJF[j][2];
                         c = j;
                         check_pation = information_in_SJF[j][0];
                     }
-                    if(information_in_SJF[j][2] != 0 && information_in_SJF[j][2] < min)
+                    if(( !leave[j] && alive[j] ) && information_in_SJF[j][2] != 0 && information_in_SJF[j][2] < min)
                     {
                         min = information_in_SJF[j][2];
                         c = j;
                         check_pation = information_in_SJF[j][0];
                     }
                 }
-
                 bed[k] = information_in_SJF[c][2];
                 information_in_SJF[c][2] = 0;
                 hospitalization[c][0] = i;
                 hospitalization[c][1] = k + 1;
                 count++;
-                
             }
-
-        }
+        }                                                                                               
         //passing of time
+        count_time ++;
         for(int z = 0; z < number_bed; z++)
         {
             if(bed[z] != 0)
@@ -283,19 +399,56 @@ void Hospital::SJF()
             }
         }   
     }  
-
+    std::cout << "....SJF..." << std::endl;
+    //print scenario(FCFS) rasult
     for(int i = 0; i < number_patient; i++)
     {
-        std::cout << "pationt " << i + 1 << " >>>>   hospitalization time " << 
-        hospitalization[i][0] <<"    hospitalization bed  " << hospitalization[i][1] << std::endl; 
+        if (alive[i]) 
+        {
+            if (hospitalization[i][1] == -3)
+            {
+                std::cout << "pationt " << i + 1 <<" >>>>   Outpation " << std::endl ;
+            }
+            else 
+            {
+                std::cout << "pationt " << i + 1 << " >>>>   hospitalization time " << 
+                hospitalization[i][0] <<"    hospitalization bed  " << hospitalization[i][1] << std::endl; 
+            }
+        }
+        else{
+            std::cout << "pationt " << i + 1 ;
+            if ( hospitalization[i][1] == -1 )
+            {
+                std::cout << " >>>>   death " << " -  \" Unfortunately, an ampty bed was not found for the patient and he died. \"  " << std::endl;
+            }
+            else if (hospitalization[i][1] == -2)
+            {
+                std::cout << " >>>>   death " << " -  \" The coming of a dead person. \"  " << std::endl ;
+            }
+            else
+            {
+                std::cout << " >>>>   hospitalization time " << hospitalization[i][0] <<
+                "    hospitalization bed  " << hospitalization[i][1] << "   >>>>  death " << std::endl; 
+            }
+        }
     }
 
+    //total waiting time
+    long int total_waitingtime = 0;
+    // //number of dead
+    // int number_deaths = 0;
+
+    for(int j = 0; j < number_patient; j++)
+    {
+        total_waitingtime += hospitalization[j][0] - information_table[j][1];
+    }
+
+    std::cout << "avarag = " << (float)total_waitingtime / (float)number_patient << std::endl;  
+    std::cout << "\" To Allah we belong. and to him is our return. \" \n"
+     << "the number of deaths = " << number_deaths << std::endl; 
+    std::cout << "the number of recoveries = " << number_patient - number_deaths << std::endl;   
+
 }
-
-
-
-
-
 
 
 
